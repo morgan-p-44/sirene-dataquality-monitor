@@ -1,267 +1,210 @@
 # sirene-dataquality-monitor
-sirene-dataquality-monitor
 
-# Sirene Data Quality Monitor
+Projet de **monitoring qualité de données** basé sur les données publiques **SIRENE (INSEE)**, limité aux **établissements du département 44 (Loire-Atlantique)**.
 
-Ce projet permet d'extraire, filtrer et charger les données **SIRENE – établissements du département 44 (Loire-Atlantique)** dans une base **Supabase PostgreSQL**, de manière **reproductible, fiable et documentée**.
+Le projet met en place un **pipeline reproductible** dans **Supabase (PostgreSQL)** avec :
+- ingestion depuis CSV
+- normalisation via vues SQL
+- contrôles qualité formalisés
+- historisation des imports
+- suivi qualité par import
+
+Stack 100 % gratuite, orientée **data engineering / analytics**.
 
 ---
 
-## 🎯 Objectif
+## 🎯 Objectifs
 
-* Télécharger les données SIRENE officielles (INSEE)
-* Filtrer uniquement le **département 44**
-* Charger les données dans **Supabase PostgreSQL**
-* Disposer d'une base propre pour analyses, data quality, dashboards
+- Importer les données SIRENE (INSEE)
+- Filtrer le périmètre département 44
+- Charger les données dans PostgreSQL (Supabase)
+- Mettre en place un **monitoring qualité structuré**
+- Préparer une base propre pour analyses et dashboards
 
 ---
 
 ## 🗂️ Structure du projet
 
-```
 sirene-dataquality-monitor/
 ├── data/
-│   ├── raw/            # Données brutes (CSV volumineux, ignoré par git)
-│   └── processed/      # Données filtrées (sirene_44.csv)
+│ ├── raw/ # Données brutes INSEE (non versionnées)
+│ └── processed/ # CSV filtré sirene_44.csv (non versionné)
 ├── ingest/
-│   ├── filter_sirene_44.py     # Filtre département 44
-│   ├── import_sirene_44.py     # (optionnel) import via Python
-│   └── load_to_supabase.sh     # Import PostgreSQL via COPY (méthode retenue)
+│ ├── filter_sirene_44.py
+│ └── load_to_supabase.sh
+├── sql/
+│ ├── 001_view_v_sirene_44.sql
+│ ├── 010_dq_checks.sql
+│ ├── 020_view_v_sirene_44_analytics.sql
+│ ├── 030_create_dq_results.sql
+│ ├── 031_run_dq_rules.sql
+│ ├── 040_create_import_runs.sql
+│ └── 050_view_v_dq_by_import.sql
+├── scripts/
+│ └── run_pipeline.sh # Orchestration complète du pipeline
 ├── .env.example
 ├── .gitignore
 └── README.md
-```
+
 
 ---
 
-## 📥 1. Données source (INSEE)
+## ⚙️ Prérequis
 
-Télécharger depuis data.gouv.fr :
+- Python 3.10+
+- Client PostgreSQL (`psql`)
+- Accès à une base PostgreSQL (Supabase)
 
-* **Jeu** : *Sirene – Fichier StockEtablissement*
-* **Format** : CSV (UTF-8)
-* **Fichier final** :
+Les dépendances Python sont listées dans `requirements.txt` (si utilisé).
 
-```
-StockEtablissement_utf8.csv  (~8,8 Go)
-```
+---
 
-Placer le fichier ici :
+## 📥 Données source
 
-```
+- **SIRENE – StockEtablissement**
+- Source : INSEE / data.gouv.fr
+- Format : CSV UTF-8 (~8,8 Go décompressé)
+
+Fichier attendu :
+
 data/raw/StockEtablissement_utf8.csv
-```
 
-⚠️ Ce fichier est **volumineux** et doit rester hors Git (`.gitignore`).
+
+Les données ne sont **pas versionnées**.
 
 ---
 
-## 🔍 2. Filtrage département 44
+## 🔍 Filtrage département 44
 
-Script :
+Le script `ingest/filter_sirene_44.py` :
+- lit le CSV SIRENE complet
+- filtre sur `codePostalEtablissement LIKE '44%'`
+- produit un CSV réduit
 
-```
-ingest/filter_sirene_44.py
-```
+Sortie :
 
-Lancer :
-
-```bash
-python ingest/filter_sirene_44.py
-```
-
-Résultat :
-
-```
 data/processed/sirene_44.csv
-```
 
-Environ **676 000 lignes**.
 
 ---
 
-## 🔐 3. Configuration Supabase
+## 🗄️ Base de données
 
-### Créer un projet Supabase
-
-* Région par défaut
-* Plan gratuit
-
-### Récupérer la connexion PostgreSQL
-
-Dans Supabase → **Connect** → Connection String :
-
-* Type : `URI`
-* Method : **Direct connection**
-
-⚠️ Attention : IPv6 par défaut. Fonctionne sous WSL **après configuration DNS**.
+- Base PostgreSQL hébergée sur **Supabase**
+- Table brute : `sirene_44` (colonnes TEXT, schéma issu du CSV)
+- Transformations réalisées via **vues SQL**
 
 ---
 
-## 🔧 4. Variables d'environnement
+## 🧼 Vue clean
 
-Créer le fichier `.env` (non versionné) :
+Vue : `v_sirene_44`
+
+- noms en `snake_case`
+- chaînes vides converties en `NULL`
+- usage SQL sans guillemets
+
+Définition :
+
+sql/001_view_v_sirene_44.sql
+
+
+---
+
+## 📊 Vue analytics
+
+Vue : `v_sirene_44_analytics`
+
+- typage logique
+- indicateurs calculés (`is_actif`, validité SIRET, département)
+- base prête pour BI / dashboards
+
+Définition :
+
+sql/020_view_v_sirene_44_analytics.sql
+
+
+---
+
+## 🧪 Data Quality
+
+### Checks analytiques
+Fichier :
+
+sql/010_dq_checks.sql
+
+
+Contrôles :
+- volumétrie
+- cohérence département
+- complétude
+- format & unicité SIRET
+- répartition actifs / fermés
+
+### Monitoring structuré
+- Table : `dq_results`
+- Règles exécutées via `sql/031_run_dq_rules.sql`
+- Résultat : métrique, seuil, statut `OK / KO`, timestamp
+
+---
+
+## 🕒 Historisation des imports
+
+Table :
+
+sirene_import_runs
+
+
+Chaque import enregistre :
+- date d’import
+- fichier source
+- nombre de lignes
+
+---
+
+## 📈 Vue Data Quality par import
+
+Vue :
+
+v_dq_by_import
+
+
+Cette vue associe chaque import à la **dernière exécution DQ connue**, avec :
+- une ligne par règle
+- un statut exploitable en BI
+
+Définition :
+
+sql/050_view_v_dq_by_import.sql
+
+
+---
+
+## ▶️ Exécution du pipeline complet
+
+Un script unique permet de rejouer l’ensemble du pipeline :
 
 ```bash
-cp .env.example .env
-```
+bash scripts/run_pipeline.sh
 
-Exemple `.env` :
+Étapes incluses :
 
-```env
-DATABASE_URL=postgresql://postgres:PASSWORD@db.xxxxx.supabase.co:5432/postgres
-SIRENE_44_CSV=/home/USER/Repos/sirene-dataquality-monitor/data/processed/sirene_44.csv
-```
+    filtrage CSV
 
-Charger les variables :
+    import Supabase
 
-```bash
-set -a; source .env; set +a
-```
+    vues SQL
 
-Tester la connexion :
+    règles Data Quality
 
-```bash
-psql "$DATABASE_URL" -c "select now();"
-```
+    historisation de l’import
 
----
+🧠 Choix techniques
 
-## 🏗️ 5. Création automatique de la table
+    PostgreSQL (Supabase) : gratuit, fiable, SQL natif
 
-⚠️ Étape **clé** : la table doit correspondre **exactement** aux colonnes CSV.
+    COPY PostgreSQL : performant sur gros volumes
 
-Commande à exécuter **telle quelle** :
+    Table brute + vues : séparation ingestion / logique métier
 
-```bash
-psql "$DATABASE_URL" -c "$(python - <<'PY'
-import pandas as pd
-cols = pd.read_csv('data/processed/sirene_44.csv', nrows=1).columns.tolist()
-sql = 'DROP TABLE IF EXISTS public.sirene_44; CREATE TABLE public.sirene_44 ('
-sql += ','.join([f'\"{c}\" text' for c in cols])
-sql += ');'
-print(sql)
-PY
-)"
-```
-
-Cette commande :
-
-* lit les colonnes du CSV
-* supprime la table si elle existe
-* recrée la table avec le bon schéma
-
----
-
-## 📤 6. Import des données dans Supabase
-
-Script utilisé (méthode retenue) :
-
-```
-ingest/load_to_supabase.sh
-```
-
-Rendre exécutable :
-
-```bash
-chmod +x ingest/load_to_supabase.sh
-```
-
-Lancer l'import :
-
-```bash
-bash ingest/load_to_supabase.sh
-```
-
-Sortie attendue :
-
-```
-✂️ Truncate table
-📥 Import CSV
-COPY 676473
-✅ Vérification
-```
-
----
-
-## ✅ 7. Vérification finale
-
-```bash
-psql "$DATABASE_URL" -c "SELECT COUNT(*) FROM public.sirene_44;"
-```
-
-Résultat attendu :
-
-```
-676473
-```
-
----
-
-## 🧠 Choix techniques
-
-* **COPY PostgreSQL** préféré à pandas/ORM :
-
-  * plus rapide
-  * plus fiable sur gros volumes
-  * reproductible
-* Table en `TEXT` volontairement :
-
-  * pas de blocage à l'import
-  * typage possible ultérieurement
-
----
-
-## 🔁 Rejouer l'import
-
-À tout moment :
-
-```bash
-bash ingest/load_to_supabase.sh
-```
-
-La table est **vidée puis rechargée** (mode `TRUNCATE`).
-
----
-
-## 📌 Prochaines étapes possibles
-
-* Index (codePostal, siret)
-* Data quality checks
-* Dashboards (Metabase / Streamlit)
-* Historisation
-
----
-
-✅ **Pipeline validé et reproductible**
-
-
-1. filter_sirene_44.py   → crée un CSV filtré (44 uniquement)
-2. import_sirene_44.py   → charge ce CSV dans Supabase
-
-## Pipeline d'ingestion
-
-1. Télécharger le fichier SIRENE StockEtablissement (CSV UTF-8)
-2. Le placer dans `data/raw/`
-3. Filtrer le département 44 :
-   ```bash
-   python ingest/filter_sirene_44.py
-
-##########################################
-
-# Sirene Data Quality Monitor (Dépt 44)
-
-Objectif : télécharger le fichier SIRENE “StockEtablissement”, filtrer les établissements du **département 44** puis importer le résultat dans **Supabase Postgres** pour analyses/qualité.
-
----
-
-## 0) Pré-requis
-
-- Linux / WSL (Ubuntu) + Python 3
-- `psql` installé (client PostgreSQL)
-
-### Installer psql (Ubuntu/WSL)
-```bash
-sudo apt update
-sudo apt install -y postgresql-client
-psql --version
+    Monitoring SQL versionné : explicite, traçable, outillé

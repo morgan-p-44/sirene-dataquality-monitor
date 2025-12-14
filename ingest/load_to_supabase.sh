@@ -15,6 +15,10 @@ fi
 echo "🧹 Truncate table"
 psql "$DATABASE_URL" -c "TRUNCATE TABLE public.sirene_44;"
 
+echo "⏱️ Disable statement timeout for this session"
+psql "$DATABASE_URL" -c "SET statement_timeout = 0;"
+
+
 echo "📥 Import CSV"
 psql "$DATABASE_URL" -c "\
 \copy public.sirene_44 \
@@ -30,4 +34,14 @@ WITH (
 echo "✅ Vérification"
 psql "$DATABASE_URL" -c "SELECT COUNT(*) FROM public.sirene_44;"
 
+echo "🧾 Register import run"
+
+psql "$DATABASE_URL" -c "
+insert into public.sirene_import_runs (source_file, row_count, comment)
+select
+  'sirene_44.csv',
+  count(*),
+  'reload'
+from public.sirene_44;
+"
 
