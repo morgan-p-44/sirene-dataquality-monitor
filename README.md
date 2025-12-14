@@ -1,5 +1,6 @@
 # sirene-dataquality-monitor
 sirene-dataquality-monitor
+
 # Sirene Data Quality Monitor
 
 Ce projet permet d'extraire, filtrer et charger les données **SIRENE – établissements du département 44 (Loire-Atlantique)** dans une base **Supabase PostgreSQL**, de manière **reproductible, fiable et documentée**.
@@ -233,3 +234,34 @@ La table est **vidée puis rechargée** (mode `TRUNCATE`).
 ---
 
 ✅ **Pipeline validé et reproductible**
+
+
+1. filter_sirene_44.py   → crée un CSV filtré (44 uniquement)
+2. import_sirene_44.py   → charge ce CSV dans Supabase
+
+## Pipeline d'ingestion
+
+1. Télécharger le fichier SIRENE StockEtablissement (CSV UTF-8)
+2. Le placer dans `data/raw/`
+3. Filtrer le département 44 :
+   ```bash
+   python ingest/filter_sirene_44.py
+
+##########################################
+
+# Sirene Data Quality Monitor (Dépt 44)
+
+Objectif : télécharger le fichier SIRENE “StockEtablissement”, filtrer les établissements du **département 44** puis importer le résultat dans **Supabase Postgres** pour analyses/qualité.
+
+---
+
+## 0) Pré-requis
+
+- Linux / WSL (Ubuntu) + Python 3
+- `psql` installé (client PostgreSQL)
+
+### Installer psql (Ubuntu/WSL)
+```bash
+sudo apt update
+sudo apt install -y postgresql-client
+psql --version
