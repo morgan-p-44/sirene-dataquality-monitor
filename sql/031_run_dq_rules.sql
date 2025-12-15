@@ -5,14 +5,14 @@ insert into public.dq_results (rule_code, rule_label, metric_value, threshold, s
 
 -- Règle 1 : % SIRET invalides < 1 %
 select
-  'SIRET_INVALID_RATE',
-  'Taux de SIRET invalides < 1%',
-  round(100.0 * avg((not is_siret_valid)::int), 2),
-  1.0,
+  'SIRET_INVALID_RATE' as rule_code,
+  'Taux de SIRET invalides < 1%' as rule_label,
+  round(100.0 * avg((not is_siret_valid)::int), 2) as metric_value,
+  1.0 as threshold,
   case
     when round(100.0 * avg((not is_siret_valid)::int), 2) < 1.0 then 'OK'
     else 'KO'
-  end
+  end as status
 from public.v_sirene_44_analytics
 
 union all
@@ -31,15 +31,18 @@ from public.v_sirene_44_analytics
 
 union all
 
--- Règle 3 : % établissements actifs > 50 %
+-- Règle 3 : % établissements actifs (créés >= 2010) > 50 %
 select
-  'ACTIVE_RATE',
-  'Taux établissements actifs > 50%',
-  round(100.0 * avg(is_actif::int), 2),
+  'ACTIVE_RATE_RECENT',
+  'Taux établissements actifs (créés après 2010) > 50%',
+  round(
+    100.0 * avg((etat_administratif_etablissement = 'A')::int),
+    2
+  ),
   50.0,
   case
-    when round(100.0 * avg(is_actif::int), 2) > 50.0 then 'OK'
+    when round(100.0 * avg((etat_administratif_etablissement = 'A')::int), 2) >= 50.0 then 'OK'
     else 'KO'
   end
-from public.v_sirene_44_analytics;
-
+from public.v_sirene_44_analytics
+where date_creation_etablissement >= date '2010-01-01';

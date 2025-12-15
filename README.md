@@ -1,210 +1,318 @@
-# sirene-dataquality-monitor
+sirene-dataquality-monitor
 
-Projet de **monitoring qualité de données** basé sur les données publiques **SIRENE (INSEE)**, limité aux **établissements du département 44 (Loire-Atlantique)**.
+Projet de monitoring de qualité de données basé sur les données publiques SIRENE (INSEE), limité aux établissements du département 44 (Loire-Atlantique).
 
-Le projet met en place un **pipeline reproductible** dans **Supabase (PostgreSQL)** avec :
-- ingestion depuis CSV
-- normalisation via vues SQL
-- contrôles qualité formalisés
-- historisation des imports
-- suivi qualité par import
+Le projet met en place un pipeline data reproductible dans Supabase (PostgreSQL) avec :
 
-Stack 100 % gratuite, orientée **data engineering / analytics**.
+ingestion de données CSV volumineuses (≈ 8,8 Go)
 
----
+normalisation via vues SQL
 
-## 🎯 Objectifs
+règles de Data Quality formalisées
 
-- Importer les données SIRENE (INSEE)
-- Filtrer le périmètre département 44
-- Charger les données dans PostgreSQL (Supabase)
-- Mettre en place un **monitoring qualité structuré**
-- Préparer une base propre pour analyses et dashboards
+historisation des imports
 
----
+suivi qualité par import
 
-## 🗂️ Structure du projet
+visualisation interactive via Streamlit
 
+Stack 100 % gratuite, orientée Data Engineering / Analytics.
+
+🎯 Objectifs
+
+Importer les données SIRENE (INSEE)
+
+Filtrer le périmètre département 44
+
+Charger les données dans PostgreSQL (Supabase)
+
+Mettre en place un monitoring qualité structuré
+
+Suivre la qualité dans le temps
+
+Exposer des résultats lisibles pour analyse et démonstration
+
+🗂️ Structure du projet
 sirene-dataquality-monitor/
 ├── data/
-│ ├── raw/ # Données brutes INSEE (non versionnées)
-│ └── processed/ # CSV filtré sirene_44.csv (non versionné)
+│   ├── raw/                      # Données brutes INSEE (non versionnées)
+│   └── processed/                # CSV filtré sirene_44.csv (non versionné)
 ├── ingest/
-│ ├── filter_sirene_44.py
-│ └── load_to_supabase.sh
+│   ├── filter_sirene_44.py       # Filtrage département 44
+│   └── load_to_supabase.sh       # Import PostgreSQL (TRUNCATE + COPY)
 ├── sql/
-│ ├── 001_view_v_sirene_44.sql
-│ ├── 010_dq_checks.sql
-│ ├── 020_view_v_sirene_44_analytics.sql
-│ ├── 030_create_dq_results.sql
-│ ├── 031_run_dq_rules.sql
-│ ├── 040_create_import_runs.sql
-│ └── 050_view_v_dq_by_import.sql
+│   ├── 001_view_v_sirene_44.sql
+│   ├── 010_dq_checks.sql
+│   ├── 020_view_v_sirene_44_analytics.sql
+│   ├── 030_create_dq_results.sql
+│   ├── 031_run_dq_rules.sql
+│   ├── 040_create_import_runs.sql
+│   └── 050_view_v_dq_by_import.sql
 ├── scripts/
-│ └── run_pipeline.sh # Orchestration complète du pipeline
+│   └── run_pipeline.sh           # Orchestration complète du pipeline
+├── streamlit_app/
+│   ├── app.py                    # Application Streamlit
+│   └── requirements.txt
+├── HOW_TO_DEV.md                 # Runbook développeur (non public)
 ├── .env.example
 ├── .gitignore
 └── README.md
 
+⚙️ Prérequis
 
----
+Python 3.10+
 
-## ⚙️ Prérequis
+Client PostgreSQL (psql)
 
-- Python 3.10+
-- Client PostgreSQL (`psql`)
-- Accès à une base PostgreSQL (Supabase)
+Accès à une base PostgreSQL (Supabase)
 
-Les dépendances Python sont listées dans `requirements.txt` (si utilisé).
+Environnement Linux / WSL recommandé
 
----
+🔐 Variables d’environnement
 
-## 📥 Données source
+Créer un fichier .env (non versionné) à partir de .env.example :
 
-- **SIRENE – StockEtablissement**
-- Source : INSEE / data.gouv.fr
-- Format : CSV UTF-8 (~8,8 Go décompressé)
+DATABASE_URL=postgresql://<ADMIN_USER>:<PASSWORD>@<HOST>:5432/postgres
+SIRENE_44_CSV=/chemin/absolu/data/processed/sirene_44.csv
+
+
+Charger les variables :
+
+set -a; source .env; set +a
+
+📥 Données source
+
+Jeu : SIRENE – StockEtablissement
+
+Source : INSEE / data.gouv.fr
+
+Format : CSV UTF-8
+
+Taille : ~8,8 Go décompressé
 
 Fichier attendu :
 
 data/raw/StockEtablissement_utf8.csv
 
 
-Les données ne sont **pas versionnées**.
+⚠️ Les données ne sont pas versionnées (voir .gitignore).
 
----
+🔍 Filtrage département 44
 
-## 🔍 Filtrage département 44
+Script :
 
-Le script `ingest/filter_sirene_44.py` :
-- lit le CSV SIRENE complet
-- filtre sur `codePostalEtablissement LIKE '44%'`
-- produit un CSV réduit
+ingest/filter_sirene_44.py
+
+
+Fonctionnement :
+
+lecture du CSV SIRENE complet
+
+filtrage sur codePostalEtablissement LIKE '44%'
+
+écriture d’un CSV réduit
 
 Sortie :
 
 data/processed/sirene_44.csv
 
 
----
+≈ 676 000 lignes
 
-## 🗄️ Base de données
+🗄️ Base de données
 
-- Base PostgreSQL hébergée sur **Supabase**
-- Table brute : `sirene_44` (colonnes TEXT, schéma issu du CSV)
-- Transformations réalisées via **vues SQL**
+PostgreSQL hébergé sur Supabase
 
----
+Table brute : sirene_44
 
-## 🧼 Vue clean
+Colonnes en TEXT (schéma identique au CSV)
 
-Vue : `v_sirene_44`
+Import via COPY PostgreSQL (robuste sur gros volumes)
 
-- noms en `snake_case`
-- chaînes vides converties en `NULL`
-- usage SQL sans guillemets
+🧼 Vue clean
+
+Vue : v_sirene_44
+
+Objectifs :
+
+noms de colonnes en snake_case
+
+chaînes vides converties en NULL
+
+SQL sans guillemets
+
+base stable pour transformations
 
 Définition :
 
 sql/001_view_v_sirene_44.sql
 
+📊 Vue analytics
 
----
+Vue : v_sirene_44_analytics
 
-## 📊 Vue analytics
+Ajouts :
 
-Vue : `v_sirene_44_analytics`
+typage logique
 
-- typage logique
-- indicateurs calculés (`is_actif`, validité SIRET, département)
-- base prête pour BI / dashboards
+indicateurs dérivés
+
+flags qualité (validité SIRET, statut actif…)
+
+Base prête pour :
+
+règles Data Quality
+
+analyses métier
+
+dashboards
 
 Définition :
 
 sql/020_view_v_sirene_44_analytics.sql
 
+🧪 Data Quality
+Table de résultats
 
----
+Table : dq_results
 
-## 🧪 Data Quality
+Contient :
 
-### Checks analytiques
-Fichier :
+code de règle
 
-sql/010_dq_checks.sql
+libellé
 
+métrique calculée
 
-Contrôles :
-- volumétrie
-- cohérence département
-- complétude
-- format & unicité SIRET
-- répartition actifs / fermés
+seuil
 
-### Monitoring structuré
-- Table : `dq_results`
-- Règles exécutées via `sql/031_run_dq_rules.sql`
-- Résultat : métrique, seuil, statut `OK / KO`, timestamp
+statut (OK / KO)
 
----
+timestamp d’exécution
 
-## 🕒 Historisation des imports
+Règles implémentées
 
-Table :
+ACTIVE_RATE_RECENT
+Taux d’établissements actifs (créés après 2010) ≥ 50 %
 
-sirene_import_runs
+CP_NULL_RATE
+Taux de codes postaux NULL < 0,5 %
 
+SIRET_INVALID_RATE
+Taux de SIRET invalides < 1 %
 
-Chaque import enregistre :
-- date d’import
-- fichier source
-- nombre de lignes
+Définition et exécution :
 
----
+sql/031_run_dq_rules.sql
 
-## 📈 Vue Data Quality par import
+🕒 Historisation des imports
 
-Vue :
+Table : sirene_import_runs
 
-v_dq_by_import
+Chaque exécution du pipeline enregistre :
 
+date d’import
 
-Cette vue associe chaque import à la **dernière exécution DQ connue**, avec :
-- une ligne par règle
-- un statut exploitable en BI
+fichier source
+
+nombre de lignes
+
+identifiant d’import (import_id)
+
+📈 Vue Data Quality par import
+
+Vue : v_dq_by_import
+
+Fonction :
+
+associe chaque import à sa dernière exécution DQ
+
+une ligne par règle et par import
+
+base unique pour BI et Streamlit
 
 Définition :
 
 sql/050_view_v_dq_by_import.sql
 
+▶️ Exécution du pipeline complet
 
----
+Un script unique permet de rejouer tout le pipeline :
 
-## ▶️ Exécution du pipeline complet
-
-Un script unique permet de rejouer l’ensemble du pipeline :
-
-```bash
 bash scripts/run_pipeline.sh
+
 
 Étapes incluses :
 
-    filtrage CSV
+Filtrage CSV
 
-    import Supabase
+Import Supabase (TRUNCATE + COPY)
 
-    vues SQL
+Création / mise à jour des vues
 
-    règles Data Quality
+Exécution des règles Data Quality
 
-    historisation de l’import
+Historisation de l’import
+
+📊 Application Streamlit
+
+L’application Streamlit consomme exclusivement des vues SQL.
+
+Fonctionnalités :
+
+sélection d’un import
+
+statut global OK / KO
+
+détail par règle
+
+filtre “KO uniquement”
+
+Lancement local :
+
+streamlit run streamlit_app/app.py
+
+🔐 Sécurité
+
+Rôle PostgreSQL dq_readonly
+
+Accès lecture seule
+
+Aucune table brute exposée
+
+Connexion via Session Pooler Supabase (IPv4 compatible)
+
+Utilisé pour Streamlit et accès public
+
+📖 Documentation développeur
+
+Un runbook interne est disponible :
+
+HOW_TO_DEV.md
+
+
+Il décrit :
+
+setup local
+
+gestion des rôles PostgreSQL
+
+exécution pas à pas
+
+points de vigilance / debug
+
+➡️ Ce fichier n’est pas destiné au public
+➡️ Il peut rester versionné ou non selon ton choix
 
 🧠 Choix techniques
 
-    PostgreSQL (Supabase) : gratuit, fiable, SQL natif
+PostgreSQL (Supabase) : gratuit, robuste, SQL natif
 
-    COPY PostgreSQL : performant sur gros volumes
+COPY PostgreSQL : performant sur gros volumes
 
-    Table brute + vues : séparation ingestion / logique métier
+Table brute + vues : séparation ingestion / logique métier
 
-    Monitoring SQL versionné : explicite, traçable, outillé
+Monitoring SQL versionné : explicite, traçable
+
+Streamlit : simple, rapide, démonstratif
+
