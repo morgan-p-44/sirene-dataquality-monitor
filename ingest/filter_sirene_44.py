@@ -4,7 +4,7 @@ from pathlib import Path
 IN_PATH = Path("data/raw/StockEtablissement_utf8.csv")
 OUT_PATH = Path("data/processed/sirene_44.csv")
 
-# Colonnes minimales utiles (tu pourras en ajouter ensuite)
+# Colonnes 
 USECOLS = [
     "siret",
     "siren",

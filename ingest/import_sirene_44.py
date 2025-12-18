@@ -8,7 +8,7 @@ DATABASE_URL = os.environ["DATABASE_URL"]
 CSV_PATH = os.environ.get("SIRENE_44_CSV", "data/processed/sirene_44.csv")
 TABLE_NAME = os.environ.get("TABLE_NAME", "sirene_etab_44")
 
-# colonnes = celles que tu as listées avec pandas (mêmes noms, mais en minuscules si besoin)
+# colonnes = celles listées avec pandas (mêmes noms, mais en minuscules si besoin)
 COLUMNS = [
     "siren","nic","siret","statutdiffusionetablissement","datecreationetablissement",
     "trancheeffectifsetablissement","anneeeffectifsetablissement",

@@ -79,7 +79,7 @@ if dq.empty:
     st.warning("Aucun résultat DQ trouvé pour cet import (vérifie `dq_results` et `v_dq_by_import`).")
     st.stop()
 
-# Optionnel: filtre KO only
+# filtre KO only
 dq_display = dq.copy()
 if show_ko_only:
     dq_display = dq_display[dq_display["status"] == "KO"]
