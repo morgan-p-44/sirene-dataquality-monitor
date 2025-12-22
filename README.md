@@ -53,6 +53,9 @@ sirene-dataquality-monitor/
 ├── streamlit_app/
 │   ├── app.py                    # Application Streamlit
 │   └── requirements.txt
+├─ .github/
+│  └─ workflows/
+│     └─ keep-alive.yml
 ├── HOW_TO_DEV.md                 # Runbook développeur (non public)
 ├── .env.example
 ├── .gitignore

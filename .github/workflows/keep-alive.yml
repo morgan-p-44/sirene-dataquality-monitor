@@ -1,0 +1,15 @@
+name: keep-alive
+
+on:
+  schedule:
+    - cron: "0 9 * * *"   # tous les jours à 09:00 UTC
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Streamlit keep-alive endpoint
+        run: |
+          curl -fsS "https://dataquality-monitor.streamlit.app/?ping=1&token=${{ secrets.PING_TOKEN }}" > /dev/null
+  
