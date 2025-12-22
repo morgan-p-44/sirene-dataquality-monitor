@@ -2,6 +2,41 @@ import streamlit as st
 import pandas as pd
 from db import read_df
 
+# -------------------------------------------------
+# Keep-alive / Ping mode (call: ?ping=1&token=...)
+# -------------------------------------------------
+def _get_qp(name: str, default: str = "") -> str:
+    """
+    Robuste: supporte st.query_params (Streamlit récent)
+    et st.experimental_get_query_params (ancien).
+    """
+    try:
+        val = st.query_params.get(name, default)
+        if isinstance(val, list):
+            return val[0] if val else default
+        return str(val)
+    except Exception:
+        val = st.experimental_get_query_params().get(name, [default])
+        return val[0] if val else default
+
+ping = _get_qp("ping", "0")
+token = _get_qp("token", "")
+
+if ping == "1":
+    expected = st.secrets.get("PING_TOKEN", "")
+    if not expected or token != expected:
+        # réponse simple (pas d'infos)
+        st.write("unauthorized")
+        st.stop()
+
+    # Requête DB la plus légère possible
+    read_df("select 1 as ok;")
+    st.write("ok")
+    st.stop()
+
+# -------------------------------------------------
+# App normale
+# -------------------------------------------------
 st.set_page_config(page_title="SIRENE 44 – DQ Monitor", layout="wide")
 st.title("📊 SIRENE 44 – Data Quality Monitor")
 
@@ -46,7 +81,6 @@ def load_rule_history(rule_code: str) -> pd.DataFrame:
         where rule_code = :rule_code
         order by imported_at
     """, {"rule_code": rule_code})
-
 
 # -----------------------------
 # Data loading
