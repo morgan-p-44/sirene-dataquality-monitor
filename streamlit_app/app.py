@@ -1,6 +1,15 @@
 import streamlit as st
 import pandas as pd
 from db import read_df
+from PIL import Image
+
+favicon = Image.open("assets/favicon.png")
+
+st.set_page_config(
+    page_title="SIRENE 44 – DQ Monitor",
+    page_icon=favicon,
+    layout="wide",
+)
 
 # -------------------------------------------------
 # Keep-alive / Ping mode (call: ?ping=1&token=...)
@@ -25,7 +34,7 @@ token = _get_qp("token", "")
 if ping == "1":
     expected = st.secrets.get("PING_TOKEN", "")
     if not expected or token != expected:
-        # réponse simple (pas d'infos)
+        # réponse simple (pas d'infos)                              
         st.write("unauthorized")
         st.stop()
 
@@ -37,7 +46,6 @@ if ping == "1":
 # -------------------------------------------------
 # App normale
 # -------------------------------------------------
-st.set_page_config(page_title="SIRENE 44 – DQ Monitor", layout="wide")
 st.title("📊 SIRENE 44 – Data Quality Monitor")
 
 # -----------------------------
@@ -156,8 +164,10 @@ table_df = dq_display[cols].copy()
 if table_df.empty and show_ko_only:
     st.info("Aucune règle KO pour cet import 🎉")
 else:
-    styled = table_df.style.applymap(status_style, subset=["status"])
-    st.dataframe(styled, use_container_width=True)
+    # Streamlit/Pandas: applymap est déprécié → utiliser map
+    styled = table_df.style.map(status_style, subset=["status"])
+    # Streamlit: use_container_width est déprécié → width="stretch"
+    st.dataframe(styled, width="stretch")
 
 st.divider()
 
@@ -179,4 +189,4 @@ else:
     st.line_chart(chart_df)
 
     # Table détaillée
-    st.dataframe(hist, use_container_width=True)
+    st.dataframe(hist, width="stretch")
