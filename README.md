@@ -5,7 +5,9 @@
 Application disponible :
 https://dataquality-monitor.streamlit.app/
 
-## Aperçu
+👉 Dashboard interactif de suivi de la qualité des données (lecture seule).
+
+## Aperçu de l’application
 
 ![Dashboard](assets/screenshot.png)
 Projet de **monitoring de la qualité des données** basé sur les données publiques **SIRENE (INSEE)**, limité aux établissements du **département 44 – Loire-Atlantique**.
@@ -205,6 +207,12 @@ Cela permet un suivi structuré de la qualité des données dans le temps.
 - **SIRET_INVALID_RATE**  
   Taux de SIRET invalides < 1 %
 
+- **CP_DEPT_INCONSISTENCY_RATE**  
+  Taux de codes postaux incohérents avec le périmètre départemental 44 < 1 %
+
+- **RECENT_CREATION_RATE**  
+  Taux d’établissements créés après 2010 ≥ 50 %
+
 Les résultats sont stockés dans la table `dq_results` et historisés par import.
 
 ---
@@ -262,7 +270,6 @@ streamlit run streamlit_app/app.py
 
 ## Roadmap / Améliorations
 
-- Ajout de nouvelles règles Data Quality (fraîcheur, cohérence inter-champs)
 - Paramétrisation des seuils par environnement (stockage des seuils dans une table dq_rule_config ou dans des variables)
 - Orchestration via Airflow (planification hebdo et gestion des dépendances : filtrage → import → vues → DQ → historisation)
 - Export des résultats DQ (export automatique en CSV après execution / exposition d'un endpoint FastAPI)
@@ -289,5 +296,7 @@ Ce projet vise à démontrer la mise en place d’un dispositif complet de fiabi
 - définition de règles de qualité
 - suivi des indicateurs
 - historisation et traçabilité
+
+Il reproduit une architecture simplifiée de monitoring de qualité des données que l’on retrouve dans des environnements data en entreprise.
 
 Ce type de dispositif est directement applicable à des contextes métiers (CRM, ERP, référentiels), où la qualité des données est un enjeu clé pour la fiabilité des analyses et des décisions.
