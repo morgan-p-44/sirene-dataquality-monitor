@@ -2,6 +2,12 @@
 
 ⚠️ Les données SIRENE ne sont pas incluses dans ce dépôt (volume important).
 
+Application disponible :
+https://dataquality-monitor.streamlit.app/
+
+## Aperçu
+
+![Dashboard](assets/screenshot.png)
 Projet de **monitoring de la qualité des données** basé sur les données publiques **SIRENE (INSEE)**, limité aux établissements du **département 44 – Loire-Atlantique**.
 
 L’objectif est de mettre en place un **pipeline data reproductible**, 100 % gratuit, orienté **Data Engineering / Analytics**, avec stockage PostgreSQL (Supabase) et visualisation via Streamlit.
