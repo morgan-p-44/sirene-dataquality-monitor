@@ -6,3 +6,7 @@ data/
 *.csv
 *.zip
 *.swp
+*Zone.Identifier
+nano
+*.tmp
+*.log

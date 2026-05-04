@@ -1,8 +1,30 @@
 # sirene-dataquality-monitor
 
+⚠️ Les données SIRENE ne sont pas incluses dans ce dépôt (volume important).
+
 Projet de **monitoring de la qualité des données** basé sur les données publiques **SIRENE (INSEE)**, limité aux établissements du **département 44 – Loire-Atlantique**.
 
 L’objectif est de mettre en place un **pipeline data reproductible**, 100 % gratuit, orienté **Data Engineering / Analytics**, avec stockage PostgreSQL (Supabase) et visualisation via Streamlit.
+
+---
+
+## Objectifs
+
+- Importer les données SIRENE (INSEE)
+- Filtrer le périmètre au département 44
+- Charger les données dans PostgreSQL (Supabase)
+- Mettre en place un monitoring qualité structuré
+- Suivre la qualité des données dans le temps
+
+---
+
+## Contexte métier
+
+Ce projet s’inscrit dans une problématique classique de fiabilité des données utilisées pour l’analyse et la prise de décision.
+
+Les données SIRENE, bien que référentielles, présentent des enjeux de qualité (complétude, validité, cohérence) qui peuvent impacter directement leur exploitation.
+
+L’objectif est donc de mettre en place un dispositif de suivi de la qualité des données permettant d’identifier, mesurer et suivre les anomalies dans le temps, dans une logique proche de projets de migration ou de référentiels métiers.
 
 ---
 
@@ -16,17 +38,7 @@ L’objectif est de mettre en place un **pipeline data reproductible**, 100 % 
 - Historisation des imports
 - Suivi de la qualité **dans le temps**
 - Visualisation interactive via **Streamlit**
-
----
-
-## Objectifs
-
-- Importer les données SIRENE (INSEE)
-- Filtrer le périmètre au département 44
-- Charger les données dans PostgreSQL (Supabase)
-- Mettre en place un monitoring qualité structuré
-- Suivre la qualité des données dans le temps
-- Exposer des résultats lisibles pour analyse et démonstration
+- Exposition de résultats lisibles pour analyse et démonstration
 
 ---
 
@@ -56,7 +68,7 @@ sirene-dataquality-monitor/
 ├─ .github/
 │  └─ workflows/
 │     └─ keep-alive.yml
-├── HOW_TO_DEV.md                 # Runbook développeur (non public)
+├── DEVELOPMENT.md                 # Documentation technique
 ├── .env.example
 ├── .gitignore
 └── README.md
@@ -70,6 +82,22 @@ sirene-dataquality-monitor/
 - Client PostgreSQL (`psql`)
 - Accès à une base PostgreSQL (Supabase)
 - Environnement **Linux / WSL recommandé**
+
+---
+
+## Lancer le projet (quick start)
+
+```bash
+# 1. configurer les variables
+cp .env.example .env
+
+# 2. lancer le pipeline
+bash scripts/run_pipeline.sh
+
+# 3. lancer l'app
+streamlit run streamlit_app/app.py
+
+```
 
 ---
 
@@ -149,6 +177,17 @@ ingest/filter_sirene_44.py
 
 ## Data Quality
 
+### Approche Data Quality
+
+Les règles de qualité sont définies selon des critères métiers et mesurées via des indicateurs (KPI).
+
+Chaque règle est :
+- explicitement définie
+- versionnée en SQL
+- historisée à chaque import
+
+Cela permet un suivi structuré de la qualité des données dans le temps.
+
 ### Règles implémentées
 
 - **ACTIVE_RATE_RECENT**  
@@ -177,7 +216,20 @@ Cela permet un suivi **temporel** de la qualité des données.
 
 ---
 
+## Gouvernance des données
+
+Le dispositif s’inscrit dans une logique de gouvernance simplifiée :
+
+- Data Owner : organisme source (INSEE)
+- Data Steward : responsable du contrôle et du suivi de la qualité des données
+
+Les anomalies sont identifiées, mesurées et suivies dans le temps via des indicateurs.
+
+Cette approche permet de structurer la responsabilité et la gestion de la qualité des données dans un contexte opérationnel.
+
 ## Application Streamlit
+
+Cette application permet de visualiser les indicateurs de qualité des données par import et d’analyser leur évolution dans le temps.
 
 - Basée uniquement sur des **vues SQL**
 - Sélection d’un import
@@ -219,3 +271,13 @@ streamlit run streamlit_app/app.py
 - **Monitoring SQL versionné** : explicite et traçable
 - **Streamlit** : simple, rapide, démonstratif
 
+## Finalité
+
+Ce projet vise à démontrer la mise en place d’un dispositif complet de fiabilisation des données :
+
+- ingestion et structuration
+- définition de règles de qualité
+- suivi des indicateurs
+- historisation et traçabilité
+
+Ce type de dispositif est directement applicable à des contextes métiers (CRM, ERP, référentiels), où la qualité des données est un enjeu clé pour la fiabilité des analyses et des décisions.
