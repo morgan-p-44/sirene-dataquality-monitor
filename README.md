@@ -233,6 +233,8 @@ Les anomalies sont identifiées, mesurées et suivies dans le temps via des indi
 
 Cette approche permet de structurer la responsabilité et la gestion de la qualité des données dans un contexte opérationnel.
 
+---
+
 ## Application Streamlit
 
 Cette application permet de visualiser les indicateurs de qualité des données par import et d’analyser leur évolution dans le temps.
@@ -265,7 +267,7 @@ streamlit run streamlit_app/app.py
 - Orchestration via Airflow (planification hebdo et gestion des dépendances : filtrage → import → vues → DQ → historisation)
 - Export des résultats DQ (export automatique en CSV après execution / exposition d'un endpoint FastAPI)
 - Ajout de tests automatisés sur les règles SQL ?
-- Déploiement Streamlit public pour portfolio
+- Ajout de nouvelles visualisations dans l’application Streamlit
 
 ---
 
@@ -276,6 +278,8 @@ streamlit run streamlit_app/app.py
 - **Table brute + vues** : séparation ingestion / logique métier
 - **Monitoring SQL versionné** : explicite et traçable
 - **Streamlit** : simple, rapide, démonstratif
+
+---
 
 ## Finalité
 
